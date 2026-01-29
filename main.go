@@ -41,13 +41,23 @@ func NewStore(filename string) (*Store, error) {
 		return nil, fmt.Errorf("invalid file size: %d (not a multiple of %d)", fileSize, RecordSize)
 	}
 
+	count := fileSize / RecordSize
+	
+	// Handle empty file case
+	if fileSize == 0 {
+		log.Printf("Loaded 0 records (empty file)")
+		return &Store{
+			data:  nil,
+			index: make(map[string]int64),
+			count: 0,
+		}, nil
+	}
+
 	// Memory-map the file for zero-copy reads
 	data, err := syscall.Mmap(int(file.Fd()), 0, int(fileSize), syscall.PROT_READ, syscall.MAP_SHARED)
 	if err != nil {
 		return nil, fmt.Errorf("failed to mmap file: %w", err)
 	}
-
-	count := fileSize / RecordSize
 	
 	// Build hash index
 	index := make(map[string]int64, count)
