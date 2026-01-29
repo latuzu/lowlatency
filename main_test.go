@@ -9,10 +9,10 @@ import (
 	"testing"
 )
 
-func createTestDataFile(t *testing.T, count int) string {
+func createTestDataFile(tb testing.TB, count int) string {
 	tmpfile, err := os.CreateTemp("", "test_data_*.bin")
 	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
+		tb.Fatalf("Failed to create temp file: %v", err)
 	}
 	filename := tmpfile.Name()
 
@@ -33,7 +33,7 @@ func createTestDataFile(t *testing.T, count int) string {
 		
 		_, err := tmpfile.Write(buffer)
 		if err != nil {
-			t.Fatalf("Failed to write record: %v", err)
+			tb.Fatalf("Failed to write record: %v", err)
 		}
 	}
 	
@@ -153,13 +153,17 @@ func TestHTTPHandlers(t *testing.T) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(value)))
 		w.WriteHeader(http.StatusOK)
-		w.Write(value)
+		if _, err := w.Write(value); err != nil {
+			t.Logf("Error writing response: %v", err)
+		}
 	})
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "OK - %d records loaded\n", store.count)
+		if _, err := fmt.Fprintf(w, "OK - %d records loaded\n", store.count); err != nil {
+			t.Logf("Error writing health response: %v", err)
+		}
 	})
 
 	t.Run("GET with valid key", func(t *testing.T) {
@@ -226,7 +230,7 @@ func TestHTTPHandlers(t *testing.T) {
 }
 
 func BenchmarkStore_Get(b *testing.B) {
-	filename := createTestDataFile(&testing.T{}, 1000)
+	filename := createTestDataFile(b, 1000)
 	defer os.Remove(filename)
 
 	store, err := NewStore(filename)
@@ -247,7 +251,7 @@ func BenchmarkStore_Get(b *testing.B) {
 }
 
 func BenchmarkHTTPHandler_Get(b *testing.B) {
-	filename := createTestDataFile(&testing.T{}, 1000)
+	filename := createTestDataFile(b, 1000)
 	defer os.Remove(filename)
 
 	store, err := NewStore(filename)
@@ -267,7 +271,7 @@ func BenchmarkHTTPHandler_Get(b *testing.B) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(value)))
 		w.WriteHeader(http.StatusOK)
-		w.Write(value)
+		_, _ = w.Write(value)  // Ignore error in benchmark
 	})
 
 	req := httptest.NewRequest("GET", "/get?key=key-00000000000000000500", nil)

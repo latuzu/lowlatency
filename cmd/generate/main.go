@@ -16,7 +16,9 @@ const (
 
 func generateRandomBytes(n int) []byte {
 	b := make([]byte, n)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		log.Fatalf("Failed to generate random bytes: %v", err)
+	}
 	return b
 }
 

@@ -56,11 +56,11 @@ func main() {
 	keyIndex := int64(0)
 
 	ticker := time.NewTicker(sleepTime)
-	defer ticker.Stop()
 
 	go func() {
 		for now := range ticker.C {
 			if now.After(endTime) {
+				ticker.Stop()
 				return
 			}
 
@@ -94,6 +94,7 @@ func main() {
 	}()
 
 	time.Sleep(time.Duration(*duration) * time.Second)
+	ticker.Stop()
 	wg.Wait()
 
 	// Calculate statistics

@@ -138,6 +138,12 @@ func main() {
 			http.Error(w, "Missing key parameter", http.StatusBadRequest)
 			return
 		}
+		
+		// Validate key length
+		if len(key) > KeySize {
+			http.Error(w, "Key exceeds maximum size", http.StatusBadRequest)
+			return
+		}
 
 		value, found := store.Get(key)
 		if !found {
@@ -149,7 +155,9 @@ func main() {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(value)))
 		w.WriteHeader(http.StatusOK)
-		w.Write(value)
+		if _, err := w.Write(value); err != nil {
+			log.Printf("Error writing response: %v", err)
+		}
 	})
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -160,12 +168,12 @@ func main() {
 
 	// Configure server for low latency and high throughput
 	server := &http.Server{
-		Addr:           fmt.Sprintf(":%d", *port),
-		Handler:        mux,
-		ReadTimeout:    1 * time.Second,
-		WriteTimeout:   1 * time.Second,
-		IdleTimeout:    60 * time.Second,
-		MaxHeaderBytes: 1 << 16, // 64KB
+		Addr:              fmt.Sprintf(":%d", *port),
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,  // Only timeout on reading headers
+		WriteTimeout:      1 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 16, // 64KB
 	}
 
 	log.Printf("Server starting on port %d with %d records", *port, store.count)
