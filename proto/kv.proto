@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package kv;
+
+// KVService provides high-performance key-value lookups.
+// Designed for p99 latency < 5ms at 10k+ RPS.
+service KVService {
+  // Get retrieves a single value by key.
+  // Returns found=false if the key doesn't exist.
+  rpc Get(GetRequest) returns (GetResponse);
+
+  // BatchGet retrieves multiple values in a single request.
+  // Useful for reducing round-trip overhead.
+  rpc BatchGet(BatchGetRequest) returns (BatchGetResponse);
+
+  // Health returns the service health status.
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+// GetRequest is a single key lookup request.
+message GetRequest {
+  // Key must be exactly 64 bytes.
+  bytes key = 1;
+}
+
+// GetResponse contains the lookup result.
+message GetResponse {
+  // True if the key was found.
+  bool found = 1;
+
+  // Value is 256 bytes if found, empty otherwise.
+  bytes value = 2;
+}
+
+// BatchGetRequest contains multiple keys to look up.
+message BatchGetRequest {
+  // Keys to look up (each must be exactly 64 bytes).
+  repeated bytes keys = 1;
+}
+
+// BatchGetResponse contains results for each key in order.
+message BatchGetResponse {
+  // Results in the same order as the request keys.
+  repeated GetResponse results = 1;
+}
+
+// HealthRequest is an empty health check request.
+message HealthRequest {}
+
+// HealthResponse contains service health information.
+message HealthResponse {
+  // True if the service is healthy and ready to serve.
+  bool healthy = 1;
+
+  // Snapshot version identifier.
+  string version = 2;
+
+  // Number of records in the current snapshot.
+  uint64 record_count = 3;
+
+  // Build timestamp of the current snapshot (Unix epoch).
+  uint64 build_timestamp = 4;
+}

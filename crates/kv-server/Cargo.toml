@@ -1,0 +1,34 @@
+[package]
+name = "kv-server"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "High-performance gRPC server for KV lookups"
+
+[[bin]]
+name = "kv-server"
+path = "src/main.rs"
+
+[dependencies]
+kv-store = { path = "../kv-store" }
+tokio.workspace = true
+tonic.workspace = true
+prost.workspace = true
+arc-swap.workspace = true
+prometheus.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+bytes.workspace = true
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+tower = "0.5"
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[build-dependencies]
+tonic-build.workspace = true

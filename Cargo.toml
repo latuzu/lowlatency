@@ -1,0 +1,68 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Low Latency KV Team"]
+license = "MIT"
+repository = "https://github.com/example/lowlatency"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# gRPC
+tonic = "0.12"
+tonic-build = "0.12"
+prost = "0.13"
+prost-types = "0.13"
+
+# Memory mapping
+memmap2 = "0.9"
+
+# Perfect hashing
+ph = "0.8"
+
+# Atomic swapping for hot reload
+arc-swap = "1.7"
+
+# Metrics
+prometheus = "0.13"
+
+# Logging/tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Hashing
+sha2 = "0.10"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+# Serialization
+bytes = "1"
+bincode = "1.3"
+serde = { version = "1", features = ["derive"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# Testing
+criterion = "0.5"
+rand = "0.8"
+tempfile = "3"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+opt-level = 3
+strip = true
+
+[profile.bench]
+lto = true
+codegen-units = 1
