@@ -114,8 +114,10 @@ func main() {
 	}
 	defer store.Close()
 
-	// Setup HTTP handlers
-	http.HandleFunc("/get", func(w http.ResponseWriter, r *http.Request) {
+	// Setup HTTP handlers with optimizations
+	mux := http.NewServeMux()
+	
+	mux.HandleFunc("/get", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -133,24 +135,29 @@ func main() {
 			return
 		}
 
+		// Set headers for optimal performance
 		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(value)))
 		w.WriteHeader(http.StatusOK)
 		w.Write(value)
 	})
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "OK - %d records loaded\n", store.count)
 	})
 
-	// Configure server for low latency
+	// Configure server for low latency and high throughput
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", *port),
+		Handler:        mux,
 		ReadTimeout:    1 * time.Second,
 		WriteTimeout:   1 * time.Second,
+		IdleTimeout:    60 * time.Second,
 		MaxHeaderBytes: 1 << 16, // 64KB
 	}
 
-	log.Printf("Server starting on port %d", *port)
+	log.Printf("Server starting on port %d with %d records", *port, store.count)
 	log.Fatal(server.ListenAndServe())
 }
